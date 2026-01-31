@@ -34,10 +34,12 @@ type User struct {
 	// JSON field for flexible data storage
 	Preferences map[string]any `gorm:"type:jsonb" json:"preferences"`
 
-	// Relationships (defined later)
+	// Has Many relationships
 	Posts    []Post    `gorm:"foreignKey:UserID" json:"posts"`
-	Profile  *Profile  `gorm:"foreignKey:UserID" json:"profile"`
 	Comments []Comment `gorm:"foreignKey:UserID" json:"comments"`
+
+	// Has One relationship - User owns one Profile
+	Profile *Profile `gorm:"foreignKey:UserID" json:"profile"`
 }
 
 // TableName overrides the default table name
