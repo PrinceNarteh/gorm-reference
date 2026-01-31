@@ -44,3 +44,10 @@ type User struct {
 func (User) TableName() string {
 	return "users"
 }
+
+// UserFilters contains optional filters for querying users
+type UserFilters struct {
+	IsActive     *bool
+	Username     string
+	CreatedAfter time.Time
+}
