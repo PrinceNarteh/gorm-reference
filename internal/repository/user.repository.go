@@ -3,6 +3,7 @@ package repository
 import (
 	"context"
 	"errors"
+	"time"
 
 	"gorm-reference/internal/models"
 
@@ -131,3 +132,47 @@ func (u *userRepository) FinndWithFilters(ctx context.Context, filters models.Us
 // Update Operations
 // Update records with various strategies for partial and full updates.
 // ====================================================================
+
+// Update updates specific fields of a user
+func (u *userRepository) Update(ctx context.Context, id uint, updates models.User) error {
+	// Updates only the specified fields
+	rowsAffected, err := u.userQuery().Where("id = ?", id).Updates(ctx, updates)
+	if err != nil {
+		return err
+	}
+	if rowsAffected == 0 {
+		return gorm.ErrRecordNotFound
+	}
+	return nil
+}
+
+// Save updates all fields of a user (including zero values)
+func (u *userRepository) Save(ctx context.Context, user *models.User) error {
+	// Save will update all fields, including zero values
+	// Use this when you want to explicitly set fields to zero/empty
+	result := u.db.WithContext(ctx).Save(user)
+	return result.Error
+}
+
+// UpdateLastLogin updates a single column without running hooks
+func (u *userRepository) UpdateLastLogin(ctx context.Context, id uint) error {
+	now := time.Now()
+	rowsAffected, err := u.userQuery().Where("id = ?", id).Update(ctx, "last_login_at", now)
+	if err != nil {
+		return err
+	}
+	if rowsAffected == 0 {
+		return gorm.ErrRecordNotFound
+	}
+	return nil
+}
+
+// IncrementCounter demonstrates atomic counter updates
+func (u *userRepository) IncreaseLoginCount(ctx context.Context, id uint) error {
+	// Use gorm.Expr for SQL expressions
+	result := u.db.WithContext(ctx).
+		Model(&models.User{}).
+		Where("id = ?", id).
+		Update("login_count", gorm.Expr("login_count + ?", 1))
+	return result.Error
+}

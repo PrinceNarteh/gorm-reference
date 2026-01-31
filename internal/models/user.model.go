@@ -12,18 +12,18 @@ type User struct {
 	// Embed gorm.Model for ID, CreatedAt, UpdatedAt, DeletedAt
 	gorm.Model
 
+	// Use index tag for better query performance
+	FirstName *string `gorm:"type:varchar(100);index" json:"firstName"`
+	LastName  *string `gorm:"type:varchar(100);index" json:"lastName"`
+
 	// Use column tag to customize the database column name
-	Email string `gorm:"column:email;type:varchar(255);uniqueIndex;not null" json:"email"`
+	Email *string `gorm:"column:email;type:varchar(255);uniqueIndex;not null" json:"email"`
 
 	// Add size constraint directly in the type
-	Username string `gorm:"type:varchar(100);uniqueIndex;not null" json:"username"`
+	Username *string `gorm:"type:varchar(100);uniqueIndex;not null" json:"username"`
 
 	// Password hash should never be selected by default
 	PasswordHash string `gorm:"type:varchar(255);not null;->:false;<-" json:"password"`
-
-	// Use index tag for better query performance
-	FirstName string `gorm:"type:varchar(100);index" json:"firstName"`
-	LastName  string `gorm:"type:varchar(100);index" json:"lastName"`
 
 	// Boolean field with default value
 	IsActive bool `gorm:"default:true" json:"isActive"`
