@@ -20,6 +20,14 @@ type UserRepository interface {
 	Create(context.Context, *models.User) error
 	CreateBatch(context.Context, *[]models.User) error
 	Upsert(context.Context, *models.User) error
+	FindByID(ctx context.Context, id uint) (*models.User, error)
+	FindByEmail(ctx context.Context, email string) (*models.User, error)
+	FindAll(ctx context.Context, page, perPage int) ([]models.User, int64, error)
+	FindWithFilters(ctx context.Context, filters models.UserFilters) ([]models.User, error)
+	Update(ctx context.Context, id uint, updates models.User) error
+	Save(ctx context.Context, user *models.User) error
+	UpdateLastLogin(ctx context.Context, id uint) error
+	IncreaseLoginCount(ctx context.Context, id uint) error
 }
 
 // UserRepository handles user database operations
@@ -110,7 +118,7 @@ func (u *userRepository) FindAll(ctx context.Context, page, perPage int) ([]mode
 }
 
 // FindWithFilters retrieves users matching multiple conditions
-func (u *userRepository) FinndWithFilters(ctx context.Context, filters models.UserFilters) ([]models.User, error) {
+func (u *userRepository) FindWithFilters(ctx context.Context, filters models.UserFilters) ([]models.User, error) {
 	// Start building the query
 	query := u.userQuery()
 
@@ -174,5 +182,51 @@ func (u *userRepository) IncreaseLoginCount(ctx context.Context, id uint) error 
 		Model(&models.User{}).
 		Where("id = ?", id).
 		Update("login_count", gorm.Expr("login_count + ?", 1))
+	return result.Error
+}
+
+// =======================================================================
+// Delete Operations
+// Delete records with soft delete support and permanent deletion options.
+// =======================================================================
+
+// Delete performs a soft delete (sets deleted_at)
+func (u *userRepository) Delete(ctx context.Context, id uint) error {
+	// With gorm.Model, Delete sets deleted_at instead of removing the row
+	rowsAffected, err := u.userQuery().Where("id = ?", id).Delete(ctx)
+	if err != nil {
+		return err
+	}
+	if rowsAffected == 0 {
+		return gorm.ErrRecordNotFound
+	}
+	return nil
+}
+
+// HardDelete permanently removes a record from the database
+func (u *userRepository) HardDelete(ctx context.Context, id uint) error {
+	// Unscoped bypasses soft delete and permanently removes the record
+	result := u.db.WithContext(ctx).Unscoped().Delete(&models.User{}, id)
+	return result.Error
+}
+
+// DeleteByCondition deletes multiple records matching a condition
+func (u *userRepository) DeleteInactiveUsers(ctx context.Context, before time.Time) (int, error) {
+	rowsAffected, err := u.userQuery().
+		Where("is_active = ? AND last_login_at < ?", false, before).
+		Delete(ctx)
+	if err != nil {
+		return 0, err
+	}
+	return rowsAffected, nil
+}
+
+// Restore recovers a soft-deleted record
+func (u *userRepository) Restore(ctx context.Context, id uint) error {
+	result := u.db.WithContext(ctx).
+		Unscoped().
+		Model(&models.User{}).
+		Where("id = ?", id).
+		Update("deleted_at", nil)
 	return result.Error
 }
