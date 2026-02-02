@@ -4,6 +4,8 @@ package models
 import (
 	"time"
 
+	validation "github.com/go-ozzo/ozzo-validation"
+	"github.com/go-ozzo/ozzo-validation/is"
 	"gorm.io/gorm"
 )
 
@@ -52,4 +54,14 @@ type UserFilters struct {
 	IsActive     *bool
 	Username     string
 	CreatedAfter time.Time
+}
+
+func (u User) Validate() error {
+	return validation.ValidateStruct(&u,
+		validation.Field(&u.FirstName, validation.Required, validation.Length(1, 100)),
+		validation.Field(&u.LastName, validation.Required, validation.Length(1, 100)),
+		validation.Field(&u.Username, validation.Required, validation.Length(3, 100)),
+		validation.Field(&u.Email, validation.Required, is.Email),
+		validation.Field(&u.PasswordHash, validation.Required, validation.Length(6, 0)),
+	)
 }
