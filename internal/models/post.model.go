@@ -1,6 +1,10 @@
 package models
 
-import "gorm.io/gorm"
+import (
+	"time"
+
+	"gorm.io/gorm"
+)
 
 // =============================================================================
 // Belongs To Relationship
@@ -25,4 +29,11 @@ type Post struct {
 	// Many-to-many with Tags
 	// GORM automatically creates the join table 'post_tags'
 	Tags []Tag `gorm:"many2many:post_tags;"`
+}
+
+type PostSummary struct {
+	ID        uint      `json:"id"`
+	Title     string    `json:"title"`
+	Username  string    `json:"username"`
+	CreatedAt time.Time `json:"createdAt"`
 }
